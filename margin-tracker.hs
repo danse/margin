@@ -47,13 +47,6 @@ activityList a =
         Chronological -> reverse
   in f . strings $ a
 
-enumerate :: Activities -> [(Int, String)]
-enumerate a =
-  let f = case access a of
-        Shorter -> id
-        Chronological -> reverse
-  in f . zip [0..] . activityList $ a
-
 overStrings f a = a { strings = f . strings $ a }
 
 append :: [String] -> Activities -> Activities
@@ -85,6 +78,12 @@ instance Show Message where
   show (Enumerate state) =
     let enumerated :: (Int, String) -> String
         enumerated (i, s) = s <> " · " <> show i
+        enumerate :: Activities -> [(Int, String)]
+        enumerate a =
+          let f = case access a of
+                Shorter -> id
+                Chronological -> reverse
+          in f . zip [0..] . activityList $ a
         activities = intercalate ",  "
           . fmap enumerated
           . enumerate
