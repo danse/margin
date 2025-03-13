@@ -65,8 +65,6 @@ data State = State {
   stateStep :: StepState
   }
 
-overStep f s = s { stateStep = f . stateStep $ s }
-
 data Message = Enumerate State
              | Added String
              | Elapsed Float
