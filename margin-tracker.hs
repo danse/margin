@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-import Control.Exception (try, Exception)
+import Control.Exception (try, Exception, ErrorCall)
 import Control.Monad (join, sequence, when)
 import Data.Bool (bool)
 import Data.List (partition, intercalate, sortOn, nub, (\\))
@@ -98,39 +98,28 @@ instance Show Message where
   show CancelTracking = "tracking discarded"
   show QuitMessage = "quitting context"
 
-data Command = Quit | Deepen String | Continue deriving Eq
-
-interpretCommand :: Either IOError String -> Command
-interpretCommand (Left _) = Quit
-interpretCommand (Right "") = Continue
-interpretCommand (Right s) = Deepen s
-
 step :: State -> IO [Margin]
 
-step state@(State _ context Prompt) = do
+step state@(State activities context Prompt) = do
   print (Enumerate state)
-  userLine <- try getLine
-  let command = interpretCommand userLine
-  if command == Quit && null context
-    then return []
-    else step (updateState command state)
-  where
-    updateState :: Command -> State -> State
-    updateState Quit state@(State activities context Prompt) =
-      state {
-        stateContext = tail context,
-        stateActivities = append (words (head context)) activities
-        }
-    updateState Continue state = state { stateStep = Logging }
-    updateState (Deepen userLine) state@(State activities context Prompt) =
-      let
-        selected :: Maybe String
-        selected = readMaybe userLine >>= atMay (activityList activities)
-        selection = fromMaybe userLine selected
-      in state {
-        stateContext = selection:context,
-        stateActivities = consume (words selection) activities
-        }
+  userLine <- (try getLine :: IO (Either ErrorCall String))
+  let m =
+        case userLine of
+          (Left _) -> if null context
+            then Nothing
+            else Just $ state {
+              stateContext = tail context,
+              stateActivities = append (words (head context)) activities }
+          (Right "") -> Just state { stateStep = Logging }
+          (Right userLine) ->
+            let
+              selected :: Maybe String
+              selected = readMaybe userLine >>= atMay (activityList activities)
+              selection = fromMaybe userLine selected
+            in Just $ state {
+              stateContext = selection:context,
+              stateActivities = consume (words selection) activities }
+  maybe (pure []) step m
 
 step state@(State _ context Logging) = do
   eitherInterval <- track
