@@ -105,24 +105,6 @@ interpretCommand (Left _) = Quit
 interpretCommand (Right "") = Continue
 interpretCommand (Right s) = Deepen s
 
--- @updateState@ is used only on @Prompt@ states
-updateState :: Command -> State -> State
-updateState Quit state@(State activities context Prompt) =
-  state {
-    stateContext = tail context,
-    stateActivities = append (words (head context)) activities
-    }
-updateState Continue state = state { stateStep = Logging }
-updateState (Deepen userLine) state@(State activities context Prompt) =
-  let
-    selected :: Maybe String
-    selected = readMaybe userLine >>= atMay (activityList activities)
-    selection = fromMaybe userLine selected
-  in state {
-    stateContext = selection:context,
-    stateActivities = consume (words selection) activities
-    }
-
 step :: State -> IO [Margin]
 
 step state@(State _ context Prompt) = do
@@ -132,6 +114,23 @@ step state@(State _ context Prompt) = do
   if command == Quit && null context
     then return []
     else step (updateState command state)
+  where
+    updateState :: Command -> State -> State
+    updateState Quit state@(State activities context Prompt) =
+      state {
+        stateContext = tail context,
+        stateActivities = append (words (head context)) activities
+        }
+    updateState Continue state = state { stateStep = Logging }
+    updateState (Deepen userLine) state@(State activities context Prompt) =
+      let
+        selected :: Maybe String
+        selected = readMaybe userLine >>= atMay (activityList activities)
+        selection = fromMaybe userLine selected
+      in state {
+        stateContext = selection:context,
+        stateActivities = consume (words selection) activities
+        }
 
 step state@(State _ context Logging) = do
   eitherInterval <- track
