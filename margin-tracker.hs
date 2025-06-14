@@ -94,7 +94,7 @@ instance Show Message where
     | h >= 1    = show h <> " hours"
     | otherwise = show m <> " minutes"
     where m = h * 60
-  show (Started activity) = "⏳ started logging " <> activity
+  show (Started activity) = "⏳ started logging, " <> activity
   show CancelTracking = "tracking discarded"
   show QuitMessage = "quitting context"
 
