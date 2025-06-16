@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-import Control.Exception (try, Exception, ErrorCall)
+import Control.Exception (try, Exception)
 import Control.Monad (join, sequence, when)
 import Data.Bool (bool)
 import Data.List (partition, intercalate, sortOn, nub, (\\))
@@ -102,7 +102,7 @@ step :: State -> IO [Margin]
 
 step state@(State activities context Prompt) = do
   print (Enumerate state)
-  userLine <- (try getLine :: IO (Either ErrorCall String))
+  userLine <- (try getLine :: IO (Either IOError String))
   let m =
         case userLine of
           (Left _) -> if null context
