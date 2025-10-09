@@ -93,9 +93,13 @@ getAllMargins paths = do
 -- helper for command line scripts. Gets a list of paths and a
 -- function to execute on them if they are all correctly parsed as
 -- margins
+onAllMargins :: [String] -> ([Margin] -> String) -> IO ()
 onAllMargins paths fun = do
   margins <- getAllMargins paths
   (putStr . fun) margins
+
+onAllMargins' :: ([Margin] -> a) -> [FilePath] -> IO [a]
+onAllMargins' g = mapMaybe (handledParse g) . defaultMany defaultFilePath
 
 catMaybes
   :: (Applicative t, Monoid (t a), Foldable t)
@@ -109,10 +113,6 @@ mapMaybe g = fmap catMaybes . traverse g
 
 defaultMany :: (Foldable f, Applicative f) => a -> f a -> f a
 defaultMany d m = if null m then pure d else m
-
-onAllMargins'
-  :: ([Margin] -> a) -> [FilePath] -> IO [a]
-onAllMargins' g = mapMaybe (handledParse g) . defaultMany defaultFilePath
 
 l :: Show s => String -> s -> String
 l a b = a <> ": " <> show b
