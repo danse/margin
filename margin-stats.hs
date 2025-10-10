@@ -38,19 +38,31 @@ format :: Accum (Map String Float) -> String
 format A {count, real, overlapping, attribution} =
   let
     e = toAscList attribution
-    fe (label, float) =
-      let s f
-            | f < 0.1 = "<0.1 " -- exponential notation starts from e^-2
-            | otherwise = uncurry etc . splitAt 4 . show $ f
-      in unwords [s (float/real), s float, label]
-    etc :: [Char] -> [Char] -> [Char]
-    etc c [] = c <> " "
-    etc c _  = c <> "_"
+    fe (label, float) = unwords [h (float/real), h float, label]
     footer = intercalate ", " [
       "real" `l` real,
       "average" `l` (real / fromIntegral count),
       "overlap" `l` (overlapping/real - 1) <> "%"]
   in unlines $ (fmap fe . sortOn snd $ e) <> ["\n", footer]
+
+-- | Short format
+--
+-- >>> h 0.3
+-- "0.3 "
+-- >>> h 0.01
+-- "<0.1 "
+-- >>> h 0.333
+-- "0.33_"
+-- >>> h 0.339
+-- "0.33_"
+h :: (Show a, Ord a, Fractional a) => a -> String
+h f
+  | f < 0.1 = "<0.1 " -- exponential notation starts from e^-2
+  | otherwise = uncurry etc . splitAt 4 . show $ f
+  where
+    etc :: [Char] -> [Char] -> [Char]
+    etc c [] = c <> " "
+    etc c _  = c <> "_"
 
 a :: Margin -> Accum [(String, Float)]
 a m = A { count=1, real=v, overlapping=v*l, attribution=attributed }
