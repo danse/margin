@@ -48,21 +48,21 @@ format A {count, real, overlapping, attribution} =
 -- | Short format
 --
 -- >>> h 0.3
--- "0.3 "
+-- "0.3"
 -- >>> h 0.01
--- "<0.1 "
+-- "<0.1"
 -- >>> h 0.333
 -- "0.33_"
 -- >>> h 0.339
 -- "0.33_"
 h :: (Show a, Ord a, Fractional a) => a -> String
 h f
-  | f < 0.1 = "<0.1 " -- exponential notation starts from e^-2
-  | otherwise = uncurry etc . splitAt 4 . show $ f
+  | f < 0.1 = "<0.1" -- exponential notation starts from e^-2
+  | otherwise = etc . splitAt 4 . show $ f
   where
-    etc :: [Char] -> [Char] -> [Char]
-    etc c [] = c <> " "
-    etc c _  = c <> "_"
+    etc :: ([Char], [Char]) -> [Char]
+    etc (c, []) = c
+    etc (c, _) = c <> "_"
 
 a :: Margin -> Accum [(String, Float)]
 a m = A { count=1, real=v, overlapping=v*l, attribution=attributed }
