@@ -150,16 +150,10 @@ applyToMargin path f = do
 addMargins :: [Margin] -> Maybe [Margin] -> [Margin]
 addMargins newMargins maybeMargins = fromMaybe [] maybeMargins <> newMargins
 
-addToFile fileName (value, description) = do
-  newMargin <- marginNow value description
-  applyToMargin fileName (addMargins [newMargin])
-  pure ()
-
-addToDefaultFile = addToFile defaultFilePath
-
 addToMaybeFile :: Maybe FilePath -> (Float, String) -> IO ()
-addToMaybeFile Nothing = addToDefaultFile
-addToMaybeFile (Just path) = addToFile path
+addToMaybeFile mPath (value, description) = do
+  newMargin <- marginNow value description
+  addMarginsToMaybeFile [newMargin] mPath
 
 addMarginsToMaybeFile :: [Margin] -> Maybe FilePath -> IO ()
 addMarginsToMaybeFile margins maybeFilePath = void $
