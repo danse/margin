@@ -6,7 +6,7 @@ module Margin
    addToMaybeFile,
    formatMarginContents,
    label,
-   onAllMargins',
+   onAllMargins,
    parseMarginFile,
    parseMaybeFile,
   )
@@ -103,13 +103,8 @@ getAllMargins paths = do
 -- helper for command line scripts. Gets a list of paths and a
 -- function to execute on them if they are all correctly parsed as
 -- margins
-onAllMargins :: [String] -> ([Margin] -> String) -> IO ()
-onAllMargins paths fun = do
-  margins <- getAllMargins paths
-  (putStr . fun) margins
-
-onAllMargins' :: ([Margin] -> a) -> [FilePath] -> IO [a]
-onAllMargins' g = mapMaybe (handledParse g) . defaultMany defaultFilePath
+onAllMargins :: ([Margin] -> a) -> [FilePath] -> IO [a]
+onAllMargins g = mapMaybe (handledParse g) . defaultMany defaultFilePath
 
 catMaybes
   :: (Applicative t, Monoid (t a), Foldable t)

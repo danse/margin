@@ -79,4 +79,4 @@ s =
 
 main = do
   Options{..} <- execParser (info options fullDesc)
-  putStrLn . intercalate "\n" =<< Margin.onAllMargins' (format . s) targets
+  putStrLn . intercalate "\n" =<< Margin.onAllMargins (format . s) targets
