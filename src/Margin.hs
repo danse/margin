@@ -1,6 +1,16 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Margin where
+module Margin
+  (Margin(..),
+   addMarginsToMaybeFile,
+   addToMaybeFile,
+   formatMarginContents,
+   l,
+   onAllMargins',
+   parseMarginFile,
+   parseMaybeFile,
+  )
+where
 
 import Control.Monad (when, void, join)
 import Data.Aeson(eitherDecode, FromJSON, ToJSON, eitherDecode, encode )
