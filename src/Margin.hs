@@ -5,7 +5,7 @@ module Margin
    addMarginsToMaybeFile,
    addToMaybeFile,
    formatMarginContents,
-   l,
+   label,
    onAllMargins',
    parseMarginFile,
    parseMaybeFile,
@@ -82,7 +82,7 @@ parseMarginFile path = do
 handledPure
   :: ([Margin] -> a) -> FilePath -> Either String [Margin] -> IO (Maybe a)
 handledPure f p = either h (pure . Just . f)
-  where h e = putStrLn (p `l` e) >> pure Nothing
+  where h e = putStrLn (p `label` e) >> pure Nothing
 
 handledParse :: ([Margin] -> a) -> FilePath -> IO (Maybe a)
 handledParse f = (>>=) <$> parseMarginFile <*> handledPure f
@@ -124,8 +124,8 @@ mapMaybe g = fmap catMaybes . traverse g
 defaultMany :: (Foldable f, Applicative f) => a -> f a -> f a
 defaultMany d m = if null m then pure d else m
 
-l :: Show s => String -> s -> String
-l a b = a <> ": " <> show b
+label :: Show s => String -> s -> String
+label a b = a <> ": " <> show b
 
 marginNow :: Float -> String -> IO Margin
 marginNow value description = Margin value description <$> getCurrentTime

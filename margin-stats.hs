@@ -8,7 +8,7 @@ import Data.Bool (bool)
 import Data.ByteString.Lazy( readFile )
 import Data.List (intercalate, sortOn)
 import Data.Map hiding (map, splitAt)
-import Margin (Margin, l)
+import Margin (Margin, label)
 import Options.Applicative
 
 import qualified Margin
@@ -40,9 +40,9 @@ format A {count, real, overlapping, attribution} =
     e = toAscList attribution
     fe (label, float) = unwords [h (float/real), h float, label]
     footer = intercalate ", " [
-      "real" `l` real,
-      "average" `l` (real / fromIntegral count),
-      "overlap" `l` (overlapping/real - 1) <> "%"]
+      "real" `label` real,
+      "average" `label` (real / fromIntegral count),
+      "overlap" `label` (overlapping/real - 1) <> "%"]
   in unlines $ (fmap fe . sortOn snd $ e) <> ["\n", footer]
 
 -- | Short format
