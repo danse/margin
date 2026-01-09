@@ -109,7 +109,7 @@ data Options = Options {
   marginFile :: Maybe String,
   marginDescriptionLimit :: Maybe Int,
   verbose :: Bool,
-  short :: Bool
+  shortFirst :: Bool
   }
 
 options :: Parser Options
@@ -127,7 +127,7 @@ main = do
   eitherMargin <- either explainParsing pure eitherEitherMargin
   let parsed = parseMargins . fromRight [] $ eitherMargin
       taken = take (fromMaybe 2000 marginDescriptionLimit) parsed
-      access = bool Chronological Shorter short
+      access = bool Chronological Shorter shortFirst
   when verbose (showMargins parsed taken)
   let
     paths = defActivities activityFiles
@@ -143,8 +143,8 @@ main = do
   print . Elapsed . sum . fmap Margin.value $ m
 
   where
-    explainParsing error = do
-      print (error :: IOError)
+    explainParsing err = do
+      print (err :: IOError)
       putStrLn "no activities will be taken by the file"
       pure $ Right []
     fromEnd f = reverse . f . reverse
