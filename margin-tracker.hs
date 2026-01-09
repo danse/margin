@@ -3,6 +3,7 @@
 import Control.Exception (try)
 import Control.Monad (when)
 import Data.Bool (bool)
+import Data.Either (fromRight)
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock
@@ -124,7 +125,7 @@ main = do
   Options{..} <- execParser (info options fullDesc)
   eitherEitherMargin <- try $ parseMaybeFile marginFile
   eitherMargin <- either explainParsing pure eitherEitherMargin
-  let parsed = parseMargins $ either (const []) id eitherMargin
+  let parsed = parseMargins . fromRight [] $ eitherMargin
       taken = take (fromMaybe 2000 marginDescriptionLimit) parsed
       access = bool Chronological Shorter short
   when verbose (showMargins parsed taken)
@@ -133,7 +134,7 @@ main = do
     readDefaults = mapM readFile paths
     tryIO :: IO a -> IO (Either IOError a)
     tryIO = try
-    emptyDefaults = fmap (either (const []) id) . tryIO
+    emptyDefaults = fmap (fromRight []) . tryIO
   defaultActivities <- emptyDefaults readDefaults
   let
     activities = makeActivities access (foldMap lines defaultActivities) taken
