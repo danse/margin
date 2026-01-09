@@ -1,27 +1,16 @@
 {-# LANGUAGE RecordWildCards #-}
 
-import Control.Exception (try, Exception)
-import Control.Monad (join, sequence, when)
+import Control.Exception (try)
+import Control.Monad (when)
 import Data.Bool (bool)
-import Data.List (partition, intercalate, sortOn, nub, (\\))
+import Data.List (nub)
 import Data.Maybe (fromMaybe)
-import Data.Semigroup ((<>))
-import Data.Set (
-  Set (..),
-  fromList,
-  singleton,
-  toList,
-  difference,
-  union)
 import Data.Time.Clock
 import Margin
 import Options.Applicative
-import Safe (atMay)
-import System.Environment (getArgs)
 import System.IO.Error ()
-import System.Posix.Time
-import System.Posix.Types
-import Text.Read (readMaybe)
+
+import qualified Seline
 
 -- activities start
 
@@ -43,52 +32,27 @@ makeActivities a d t = Activities (t <> d) a
 activityList :: Activities -> [String]
 activityList a =
   let f = case access a of
-        Shorter -> sortOn length
+        Shorter -> id
         Chronological -> reverse
   in f . strings $ a
-
-overStrings f a = a { strings = f . strings $ a }
-
-append :: [String] -> Activities -> Activities
-append new = overStrings (<> new)
-
-consume :: [String] -> Activities -> Activities
-consume consumed  = overStrings (\\ consumed)
 
 -- activities end
 
 data StepState = Logging | Prompt
 
 data State = State {
-  stateActivities :: Activities,
-  stateContext :: [String],
+  _stateActivities :: Activities,
+  _stateContext :: [String],
   stateStep :: StepState
   }
 
-data Message = Enumerate State
-             | Added String
+data Message = Added String
              | Elapsed Float
              | Started String
              | CancelTracking
              | QuitMessage
 
 instance Show Message where
-  show (Enumerate state) =
-    let enumerated :: (Int, String) -> String
-        enumerated (i, s) = s <> " · " <> show i
-        enumerate :: Activities -> [(Int, String)]
-        enumerate a =
-          let f = case access a of
-                Shorter -> id
-                Chronological -> reverse
-          in f . zip [0..] . activityList $ a
-        activities = intercalate ",  "
-          . fmap enumerated
-          . enumerate
-          . stateActivities
-          $ state
-        context = intercalate " > " (reverse $ stateContext state)
-    in activities <> "\n" <> context
   show (Added description) = "added " <> description <> " to margin file"
   show (Elapsed h)
     | h >= 1    = show h <> " hours"
@@ -100,26 +64,12 @@ instance Show Message where
 
 step :: State -> IO [Margin]
 
-step state@(State activities context Prompt) = do
-  print (Enumerate state)
-  userLine <- (try getLine :: IO (Either IOError String))
-  let m =
-        case userLine of
-          (Left _) -> if null context
-            then Nothing
-            else Just $ state {
-              stateContext = tail context,
-              stateActivities = append (words (head context)) activities }
-          (Right "") -> Just state { stateStep = Logging }
-          (Right userLine) ->
-            let
-              selected :: Maybe String
-              selected = readMaybe userLine >>= atMay (activityList activities)
-              selection = fromMaybe userLine selected
-            in Just $ state {
-              stateContext = selection:context,
-              stateActivities = consume (words selection) activities }
-  maybe (pure []) step m
+step (State activities context Prompt) = do
+  let o = Just $ Seline.Options (access activities == Shorter)
+  s <- Seline.seline o (activityList activities) context
+  case s of
+    Just selection -> step (State activities selection Logging)
+    Nothing -> pure []
 
 step state@(State _ context Logging) = do
   eitherInterval <- track

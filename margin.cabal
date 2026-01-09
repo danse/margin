@@ -40,7 +40,8 @@ executable margin-tracker
                       safe,
                       time,
                       unix,
-                      vector
+                      vector,
+                      seline
 
 executable margin-stats
  main-is: margin-stats.hs
