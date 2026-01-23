@@ -3,5 +3,5 @@ packages: .
 source-repository-package
         type: git
         location: git@github.com:danse/seline.git
-        tag: 0.3.0.0
+        tag: 0.3.1.0
  
