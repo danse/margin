@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                margin
-version:             0.5.0.0
+version:             0.5.0.1
 -- synopsis:            
 -- description:         
 license:             PublicDomain
@@ -18,7 +18,7 @@ cabal-version:       >=2.0
 executable margin-add
  main-is: margin-add.hs
  build-depends:       base,
-                      time ^>= 1.9.1,
+                      time,
                       aeson,
                       cassava,
                       iso8601-time,
