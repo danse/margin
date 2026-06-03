@@ -70,7 +70,6 @@ instance Csv.DefaultOrdered Margin where
 
 parseMarginFile :: FilePath -> IO (Either String [Margin])
 parseMarginFile path = do
-  putStrLn ("reading file " <> path)
   contents <- Data.ByteString.Lazy.readFile path
   case Csv.decodeByName contents of
     Right (_, margins) -> pure $ Right $ Vector.toList margins
