@@ -5,6 +5,7 @@ module Margin
    addMarginsToMaybeFile,
    addToMaybeFile,
    formatMarginContents,
+   getAllMargins,
    label,
    onAllMargins,
    parseMarginFile,
