@@ -4,6 +4,7 @@ import Control.Exception (try)
 import Control.Monad (when)
 import Data.Bool (bool)
 import Data.Either (fromRight)
+import Data.Fixed (Pico)
 import Data.List (nub)
 import Data.Maybe (fromMaybe)
 import Data.Time.Clock
@@ -87,6 +88,7 @@ step state@(State _ context Logging) = do
         onInterval :: (UTCTime, UTCTime) -> IO [Margin]
         onInterval (start, stop) =
           let
+            fixToFloat :: Pico -> Float
             fixToFloat = fromRational . toRational
             seconds = fixToFloat $ nominalDiffTimeToSeconds $
                       stop `diffUTCTime` start
