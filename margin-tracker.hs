@@ -40,12 +40,9 @@ activityList a =
 
 -- activities end
 
-data StepState = Logging | Prompt
-
 data State = State {
   _stateActivities :: Activities,
-  _stateContext :: [String],
-  stateStep :: StepState
+  _stateContext :: [String]
   }
 
 data Message = Added String
@@ -64,19 +61,19 @@ instance Show Message where
   show CancelTracking = "tracking discarded"
   show QuitMessage = "quitting context"
 
-step :: State -> IO [Margin]
+prompt, track :: State -> IO [Margin]
 
-step (State activities context Prompt) = do
+prompt (State activities context) = do
   let o = Just $ Seline.Options (access activities == Shorter)
   s <- Seline.seline o (activityList activities) context
   case s of
-    Just selection -> step (State activities selection Logging)
+    Just selection -> track (State activities selection)
     Nothing -> pure []
 
-step state@(State _ context Logging) = do
+track state@(State _ context) = do
   eitherInterval <- track
   either onTrackingError onInterval eitherInterval
-  where nextStep = step state { stateStep = Prompt }
+  where nextStep = prompt state
         description = unwords (reverse context)
         track :: IO (Either IOError (UTCTime, UTCTime))
         track = do
@@ -140,7 +137,7 @@ main = do
   defaultActivities <- emptyDefaults readDefaults
   let
     activities = makeActivities access (foldMap lines defaultActivities) taken
-  m <- step (State activities [] Prompt)
+  m <- prompt (State activities [])
   addMarginsToMaybeFile m marginFile
   print . Elapsed . sum . fmap Margin.value $ m
 
