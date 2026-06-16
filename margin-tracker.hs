@@ -61,20 +61,28 @@ instance Show Message where
   show CancelTracking = "tracking discarded"
   show QuitMessage = "quitting context"
 
-prompt, track :: State -> IO [Margin]
+loop :: Monad f => f (Maybe a) -> f [a]
+loop f = do
+  a <- f
+  case a of
+    Nothing -> pure []
+    Just a -> do
+      l <- loop f
+      pure (a:l)
+
+prompt, track :: State -> IO (Maybe Margin)
 
 prompt (State activities context) = do
   let o = Just $ Seline.Options (access activities == Shorter)
   s <- Seline.seline o (activityList activities) context
   case s of
     Just selection -> track (State activities selection)
-    Nothing -> pure []
+    Nothing -> pure Nothing
 
 track state@(State _ context) = do
   eitherInterval <- track
   either onTrackingError onInterval eitherInterval
-  where nextStep = prompt state
-        description = unwords (reverse context)
+  where description = unwords (reverse context)
         track :: IO (Either IOError (UTCTime, UTCTime))
         track = do
           print (Started description)
@@ -82,7 +90,7 @@ track state@(State _ context) = do
           eitherEnter <- try getLine
           t2 <- getCurrentTime
           pure $ (t1, t2) <$ eitherEnter
-        onInterval :: (UTCTime, UTCTime) -> IO [Margin]
+        onInterval :: (UTCTime, UTCTime) -> IO (Maybe Margin)
         onInterval (start, stop) =
           let
             fixToFloat :: Pico -> Float
@@ -92,12 +100,11 @@ track state@(State _ context) = do
             hours = seconds / 3600
           in do
             print (Elapsed hours)
-            nextData <- nextStep
-            pure $ Margin hours description start : nextData
-        onTrackingError :: IOError -> IO [Margin]
+            pure . pure $ Margin hours description start
+        onTrackingError :: IOError -> IO (Maybe Margin)
         onTrackingError _ = do
           print CancelTracking
-          nextStep
+          prompt state
 
 defActivities :: [FilePath] -> [FilePath]
 defActivities [] = ["margin-tracker-activities"]
@@ -137,7 +144,7 @@ main = do
   defaultActivities <- emptyDefaults readDefaults
   let
     activities = makeActivities access (foldMap lines defaultActivities) taken
-  m <- prompt (State activities [])
+  m <- loop $ prompt (State activities [])
   addMarginsToMaybeFile m marginFile
   print . Elapsed . sum . fmap Margin.value $ m
 
