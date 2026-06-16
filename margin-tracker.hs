@@ -70,9 +70,9 @@ loop f = do
 
 prompt, track :: State -> IO (Maybe Margin)
 
-prompt (State activities context) = do
+prompt (State activities _) = do
   let o = Just $ Seline.Options (access activities == Shorter)
-  s <- Seline.seline o (activityList activities) context
+  s <- Seline.seline o (activityList activities) []
   case s of
     Just selection -> track (State activities selection)
     Nothing -> pure Nothing
