@@ -49,7 +49,6 @@ data Message = Added String
              | Elapsed Float
              | Started String
              | CancelTracking
-             | QuitMessage
 
 instance Show Message where
   show (Added description) = "added " <> description <> " to margin file"
@@ -59,7 +58,6 @@ instance Show Message where
     where m = h * 60
   show (Started activity) = "⏳ started logging, " <> activity
   show CancelTracking = "tracking discarded"
-  show QuitMessage = "quitting context"
 
 loop :: Monad f => f (Maybe a) -> f [a]
 loop f = do
