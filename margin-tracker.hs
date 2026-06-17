@@ -59,23 +59,26 @@ instance Show Message where
   show (Started activity) = "⏳ started logging, " <> activity
   show CancelTracking = "tracking discarded"
 
-loop :: Monad f => (s -> f (s, Maybe a)) -> s -> f [a]
+data Loop a = Quit | Continue | Yield a
+
+loop :: Monad f => (s -> f (s, Loop a)) -> s -> f [a]
 loop f s1 = do
   a <- f s1
   case a of
-    (_, Nothing) -> pure []
-    (s2, Just a) -> do
+    (_, Quit) -> pure []
+    (s2, Continue) -> loop f s2
+    (s2, Yield a) -> do
       l <- loop f s2
       pure (a:l)
 
-prompt, track :: State -> IO (State, Maybe Margin)
+prompt, track :: State -> IO (State, Loop Margin)
 
 prompt state@(State activities context) = do
   let o = Just $ Seline.Options (access activities == Shorter)
   s <- Seline.seline o (activityList activities) context
   case s of
     Just selection -> track (State activities selection)
-    Nothing -> pure (state, Nothing)
+    Nothing -> pure (state, Quit)
 
 track state@(State _ context) = do
   eitherInterval <- track
@@ -88,7 +91,7 @@ track state@(State _ context) = do
           eitherEnter <- try getLine
           t2 <- getCurrentTime
           pure $ (t1, t2) <$ eitherEnter
-        onInterval :: (UTCTime, UTCTime) -> IO (State, Maybe Margin)
+        onInterval :: (UTCTime, UTCTime) -> IO (State, Loop Margin)
         onInterval (start, stop) =
           let
             fixToFloat :: Pico -> Float
@@ -98,11 +101,11 @@ track state@(State _ context) = do
             hours = seconds / 3600
           in do
             print (Elapsed hours)
-            pure (state, Just $ Margin hours description start)
-        onTrackingError :: IOError -> IO (State, Maybe Margin)
+            pure (state, Yield $ Margin hours description start)
+        onTrackingError :: IOError -> IO (State, Loop Margin)
         onTrackingError _ = do
           print CancelTracking
-          prompt state
+          pure (state, Continue)
 
 defActivities :: [FilePath] -> [FilePath]
 defActivities [] = ["margin-tracker-activities"]
